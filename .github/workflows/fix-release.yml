@@ -57,9 +57,12 @@ jobs:
 
       - name: Comment on Release Issue
         uses: actions/github-script@v6
+        env:
+          VERSION: ${{ env.VERSION }}
+          REGISTRY: ${{ env.REGISTRY }}
+          FIX_NO: ${{ env.FIX_NO }}
+          FIX_COMMITS: ''  # опционально собрать логи
         with:
-          env:
-            FIX_COMMITS: ${{ steps.test.outputs.commits || '' }}  # опционально собрать логи
           script: |
             // найдём issue “Release <VERSION>”
             const list = await github.rest.issues.listForRepo({
