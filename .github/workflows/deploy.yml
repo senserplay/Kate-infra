@@ -47,15 +47,15 @@ jobs:
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v0.1.4
-        env:
-          VERSION_TAG: ${{ env.VERSION_TAG }}
         with:
           host: ${{ secrets.PROD_HOST }}
           username: ${{ secrets.PROD_USER }}
           key: ${{ secrets.PROD_SSH_KEY }}
+          envs: REGISTRY,VERSION,VERSION_TAG
           script: |
             # Используем VERSION_TAG если он установлен, иначе VERSION_latest
             IMAGE_TAG="${VERSION_TAG:-${VERSION}_latest}"
+            echo "Using image: ${REGISTRY}/app:${IMAGE_TAG}"
             docker pull ${REGISTRY}/app:${IMAGE_TAG}
             docker stop app || true
             docker rm app   || true
