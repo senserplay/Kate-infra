@@ -6,7 +6,8 @@
     "build": "webpack --mode=production --node-env=production",
     "watch": "webpack --watch",
     "test": "jest",
-    "lint": "eslint ./src"
+    "lint": "eslint ./src",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@bem-react/classname": "^1.6.0",
