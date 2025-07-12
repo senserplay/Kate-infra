@@ -66,7 +66,7 @@ jobs:
             docker pull ${REGISTRY}/app:${IMAGE_TAG}
             docker stop app || true
             docker rm app   || true
-            docker run -d --name app ${REGISTRY}/app:${IMAGE_TAG}
+            docker run -d --name app -p 3000:3000 ${REGISTRY}/app:${IMAGE_TAG}
 
       - name: Comment on Release Issue
         uses: actions/github-script@v6
