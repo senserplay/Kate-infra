@@ -49,9 +49,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: iss.number,
-              body: `
-🚀 Deployed to production
-- Date: ${new Date().toISOString().slice(0,10)}
-- By: @${context.actor}
-`
+              body: '🚀 Deployed to production\n' +
+                '- Date: ' + new Date().toISOString().slice(0,10) + '\n' +
+                '- By: @' + context.actor
             });

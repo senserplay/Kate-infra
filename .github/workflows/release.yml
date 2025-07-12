@@ -85,12 +85,11 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               title: `Release ${process.env.VERSION}`,
-              body: `**Release ${process.env.VERSION}**
-- Date: ${new Date().toISOString().slice(0,10)}
-- Author: @${context.actor}
-- Version: ${process.env.VERSION}
-- Commits:
-${process.env.COMMITS}
-- Docker: \`${process.env.REGISTRY}/app:${process.env.VERSION}\`
-- Docker (latest): \`${process.env.REGISTRY}/app:${process.env.VERSION}_latest\``
+              body: '**Release ' + process.env.VERSION + '**\n' +
+                '- Date: ' + new Date().toISOString().slice(0,10) + '\n' +
+                '- Author: @' + context.actor + '\n' +
+                '- Version: ' + process.env.VERSION + '\n' +
+                '- Commits:\n' + process.env.COMMITS + '\n' +
+                '- Docker: `' + process.env.REGISTRY + '/app:' + process.env.VERSION + '`\n' +
+                '- Docker (latest): `' + process.env.REGISTRY + '/app:' + process.env.VERSION + '_latest`'
             })
