@@ -13,13 +13,13 @@ env:
   FIX_NO: ${{ github.run_number }}
 
 jobs:
-  typecheck:
-    name: Typecheck
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - run: npm ci
-      - run: npm run typecheck
+      - run: npm run lint
 
   test:
     name: Test
@@ -31,7 +31,7 @@ jobs:
 
   publish-fix:
     name: Build & Publish Fix
-    needs: [typecheck, test]
+    needs: [lint, test]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
