@@ -1,0 +1,84 @@
+name: Fix-Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version to fix'
+        required: true
+
+env:
+  REGISTRY: cr.yandex/${{ secrets.REGISTRY_ID }}
+  VERSION: ${{ github.event.inputs.version }}
+  FIX_NO: ${{ github.run_number }}
+
+jobs:
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: npm ci
+      - run: npm run typecheck
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: npm ci
+      - run: npm run test
+
+  publish-fix:
+    name: Build & Publish Fix
+    needs: [typecheck, test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Log in to Yandex Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: cr.yandex
+          username: ${{ secrets.YC_REGISTRY_USER }}
+          password: ${{ secrets.YC_REGISTRY_TOKEN }}
+
+      - name: Build & push fix images
+        run: |
+          docker build -t ${REGISTRY}/app:${VERSION}_fix${FIX_NO} .
+          docker tag ${REGISTRY}/app:${VERSION}_fix${FIX_NO} ${REGISTRY}/app:${VERSION}_latest
+          docker push ${REGISTRY}/app:${VERSION}_fix${FIX_NO}
+          docker push ${REGISTRY}/app:${VERSION}_latest
+
+      - name: Tag fix
+        run: |
+          git tag ${VERSION}-fix${FIX_NO}
+          git push origin ${VERSION}-fix${FIX_NO}
+
+      - name: Comment on Release Issue
+        uses: actions/github-script@v6
+        with:
+          env:
+            FIX_COMMITS: ${{ steps.test.outputs.commits || '' }}  # опционально собрать логи
+          script: |
+            // найдём issue “Release <VERSION>”
+            const list = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open'
+            });
+            const iss = list.data.find(i=>i.title===`Release ${process.env.VERSION}`);
+            if (!iss) throw new Error(`Cannot find Release ${process.env.VERSION} issue`);
+            const body = `
+**Fix ${process.env.VERSION}-fix${process.env.FIX_NO}**
+- Date: ${new Date().toISOString().slice(0,10)}
+- Author: @${context.actor}
+- Commits: (см. ветку releases/${process.env.VERSION})
+- Docker: \`${process.env.REGISTRY}/app:${process.env.VERSION}_fix${process.env.FIX_NO}\`
+`;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: iss.number,
+              body
+            });
