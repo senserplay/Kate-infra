@@ -10,6 +10,6 @@ app.use(express.json());
 app.use(basename, express.static('dist', { index: false }));
 app.use(basename, router);
 
-app.listen(port, '::', () => {
-    console.log(`Example app listening at http://localhost:${port}${basename}`);
+app.listen(port, '0.0.0.0', () => {
+    console.log(`Example app listening at http://0.0.0.0:${port}${basename}`);
 });
