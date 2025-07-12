@@ -54,7 +54,9 @@ jobs:
           envs: REGISTRY,VERSION,VERSION_TAG
           script: |
             # Логин в Yandex Container Registry
-            echo ${{ secrets.YC_REGISTRY_TOKEN }} | docker login cr.yandex -u ${{ secrets.YC_REGISTRY_USER }} --password-stdin
+            # Извлекаем токен из JSON (поле id)
+            TOKEN=$(echo '${{ secrets.YC_REGISTRY_TOKEN }}' | grep -o '"id": "[^"]*"' | cut -d'"' -f4)
+            echo "$TOKEN" | docker login cr.yandex -u ${{ secrets.YC_REGISTRY_USER }} --password-stdin
             
             # Используем VERSION_TAG если он установлен, иначе VERSION_latest
             IMAGE_TAG="${VERSION_TAG:-${VERSION}_latest}"
