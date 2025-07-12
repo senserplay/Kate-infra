@@ -1,5 +1,4 @@
 name: Release
-
 on:
   workflow_dispatch:
 
@@ -69,30 +68,28 @@ jobs:
       - name: Update CHANGELOG.md
         run: |
           DATE=$(date +'%Y-%m-%d')
-          echo -e "## ${VERSION} — ${DATE}\n${{ steps.commits.outputs.commits }}\n\n$(cat CHANGELOG.md)" \
-               > CHANGELOG.md
+          echo -e "## ${VERSION} — ${DATE}\n${{ steps.commits.outputs.commits }}\n\n$(cat CHANGELOG.md)" > CHANGELOG.md
           git add CHANGELOG.md
           git commit -m "docs: update CHANGELOG for release ${VERSION}"
           git push origin HEAD:releases/${VERSION}
 
       - name: Create GitHub Issue
         uses: actions/github-script@v6
+        env:
+          REGISTRY: ${{ env.REGISTRY }}
+          VERSION: ${{ env.VERSION }}
+          COMMITS: ${{ steps.commits.outputs.commits }}
         with:
-          env:
-            COMMITS: ${{ steps.commits.outputs.commits }}
           script: |
             await github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
               title: `Release ${process.env.VERSION}`,
-              body: `
-**Release ${process.env.VERSION}**
-- Date: ${new Date().toISOString().slice(0,10)}
-- Author: @${context.actor}
-- Version: ${process.env.VERSION}
-- Commits:
-${process.env.COMMITS}
-- Docker: \`${process.env.REGISTRY}/app:${process.env.VERSION}\`
-- Docker (latest): \`${process.env.REGISTRY}/app:${process.env.VERSION}_latest\`
-`
+              body: '**Release ' + process.env.VERSION + '**\n' +
+                '- Date: ' + new Date().toISOString().slice(0,10) + '\n' +
+                '- Author: @' + context.actor + '\n' +
+                '- Version: ' + process.env.VERSION + '\n' +
+                '- Commits:\n' + process.env.COMMITS + '\n' +
+                '- Docker: `' + process.env.REGISTRY + '/app:' + process.env.VERSION + '`\n' +
+                '- Docker (latest): `' + process.env.REGISTRY + '/app:' + process.env.VERSION + '_latest`'
             })

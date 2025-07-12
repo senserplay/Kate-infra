@@ -57,9 +57,12 @@ jobs:
 
       - name: Comment on Release Issue
         uses: actions/github-script@v6
+        env:
+          VERSION: ${{ env.VERSION }}
+          REGISTRY: ${{ env.REGISTRY }}
+          FIX_NO: ${{ env.FIX_NO }}
+          FIX_COMMITS: ''  # опционально собрать логи
         with:
-          env:
-            FIX_COMMITS: ${{ steps.test.outputs.commits || '' }}  # опционально собрать логи
           script: |
             // найдём issue “Release <VERSION>”
             const list = await github.rest.issues.listForRepo({
@@ -69,13 +72,11 @@ jobs:
             });
             const iss = list.data.find(i=>i.title===`Release ${process.env.VERSION}`);
             if (!iss) throw new Error(`Cannot find Release ${process.env.VERSION} issue`);
-            const body = `
-**Fix ${process.env.VERSION}-fix${process.env.FIX_NO}**
-- Date: ${new Date().toISOString().slice(0,10)}
-- Author: @${context.actor}
-- Commits: (см. ветку releases/${process.env.VERSION})
-- Docker: \`${process.env.REGISTRY}/app:${process.env.VERSION}_fix${process.env.FIX_NO}\`
-`;
+            const body = '**Fix ' + process.env.VERSION + '-fix' + process.env.FIX_NO + '**\n' +
+              '- Date: ' + new Date().toISOString().slice(0,10) + '\n' +
+              '- Author: @' + context.actor + '\n' +
+              '- Commits: (см. ветку releases/' + process.env.VERSION + ')\n' +
+              '- Docker: `' + process.env.REGISTRY + '/app:' + process.env.VERSION + '_fix' + process.env.FIX_NO + '`';
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
