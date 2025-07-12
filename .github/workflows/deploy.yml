@@ -17,19 +17,42 @@ jobs:
     steps:
       - name: Verify image exists
         run: |
-          docker manifest inspect ${REGISTRY}/app:${VERSION}_latest
+          echo "REGISTRY_ID: ${{ secrets.REGISTRY_ID }}"
+          echo "REGISTRY: ${REGISTRY}"
+          echo "VERSION: ${VERSION}"
+          echo "Checking for image: ${REGISTRY}/app:${VERSION}_latest"
+          if docker manifest inspect ${REGISTRY}/app:${VERSION}_latest; then
+            echo "✅ Image ${REGISTRY}/app:${VERSION}_latest found"
+          else
+            echo "❌ Image ${REGISTRY}/app:${VERSION}_latest not found"
+            echo "Checking for alternative tags..."
+            if docker manifest inspect ${REGISTRY}/app:${VERSION}; then
+              echo "✅ Found ${REGISTRY}/app:${VERSION}, will use this instead"
+              echo "VERSION_TAG=${VERSION}" >> $GITHUB_ENV
+            else
+              echo "❌ No image found for version ${VERSION}"
+              echo "Available images in registry:"
+              # Попробуем получить список доступных образов
+              echo "Please check if the image was built and pushed correctly"
+              exit 1
+            fi
+          fi
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v0.1.4
+        env:
+          VERSION_TAG: ${{ env.VERSION_TAG }}
         with:
           host: ${{ secrets.PROD_HOST }}
           username: ${{ secrets.PROD_USER }}
           key: ${{ secrets.PROD_SSH_KEY }}
           script: |
-            docker pull ${REGISTRY}/app:${VERSION}_latest
+            # Используем VERSION_TAG если он установлен, иначе VERSION_latest
+            IMAGE_TAG="${VERSION_TAG:-${VERSION}_latest}"
+            docker pull ${REGISTRY}/app:${IMAGE_TAG}
             docker stop app || true
             docker rm app   || true
-            docker run -d --name app ${REGISTRY}/app:${VERSION}_latest
+            docker run -d --name app ${REGISTRY}/app:${IMAGE_TAG}
 
       - name: Comment on Release Issue
         uses: actions/github-script@v6
