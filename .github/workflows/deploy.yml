@@ -47,14 +47,19 @@ jobs:
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v0.1.4
+        env:
+          YC_TOKEN: ${{ secrets.YC_REGISTRY_TOKEN }}
+          YC_USER: ${{ secrets.YC_REGISTRY_USER }}
         with:
           host: ${{ secrets.PROD_HOST }}
           username: ${{ secrets.PROD_USER }}
           key: ${{ secrets.PROD_SSH_KEY }}
-          envs: REGISTRY,VERSION,VERSION_TAG
+          envs: REGISTRY,VERSION,VERSION_TAG,YC_TOKEN,YC_USER
           script: |
             # Логин в Yandex Container Registry
-            echo ${{ secrets.YC_REGISTRY_TOKEN }} | docker login cr.yandex -u ${{ secrets.YC_REGISTRY_USER }} --password-stdin
+            # Извлекаем токен из JSON (поле id)
+            TOKEN=$(echo "$YC_TOKEN" | grep -o '"id": "[^"]*"' | cut -d'"' -f4)
+            echo "$TOKEN" | docker login cr.yandex -u "$YC_USER" --password-stdin
             
             # Используем VERSION_TAG если он установлен, иначе VERSION_latest
             IMAGE_TAG="${VERSION_TAG:-${VERSION}_latest}"
