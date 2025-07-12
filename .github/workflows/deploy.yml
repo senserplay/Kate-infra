@@ -43,8 +43,17 @@ jobs:
               repo: context.repo.repo,
               state: 'open'
             });
-            const iss = list.data.find(i=>i.title===`Release ${process.env.VERSION}`);
-            if (!iss) throw new Error(`Cannot find Release ${process.env.VERSION} issue`);
+            let iss = list.data.find(i=>i.title===`Release ${process.env.VERSION}`);
+            if (!iss) {
+              // Создаем issue, если он не существует
+              iss = await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `Release ${process.env.VERSION}`,
+                body: `**Release ${process.env.VERSION}**\n- Created automatically for deployment\n- Version: ${process.env.VERSION}`
+              });
+              iss = iss.data;
+            }
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
